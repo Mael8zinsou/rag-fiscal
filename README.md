@@ -1,7 +1,7 @@
 # RAG fiscal
 
 Un assistant qui répond aux questions de fiscalité patrimoniale à partir de la doctrine officielle (le BOFiP),
-qui cite le passage exact derrière chaque réponse, et qui préfère dire « je ne sais pas » plutôt que d'inventer.
+qui cite le passage exact derrière chaque réponse, et qui dit « je ne sais pas » quand il n'est pas sûr.
 
 ## Pourquoi ce projet
 
@@ -23,7 +23,7 @@ Deux situations le poussent à ne pas répondre normalement :
 
 - **Aucun passage n'est assez pertinent** : il s'abstient et le dit clairement.
 - **Le LLM ne répond pas, ou cite une source qui n'existe pas** : l'API renvoie directement les passages
-  trouvés, avec leurs références, plutôt qu'une réponse douteuse.
+  trouvés, avec leurs références.
 
 ## Comment ça marche
 
@@ -124,7 +124,7 @@ Les tests tournent sans modèle ni réseau : `pytest -q`
 - Placer une authentification OIDC (Keycloak, par exemple) devant l'API.
 - Étendre le corpus au reste de la doctrine.
 
-Ce n'est pas un outil de conseil fiscal : il aide à retrouver la doctrine applicable, il ne la remplace pas.
+Ce n'est pas un outil de conseil fiscal : il aide à retrouver la doctrine applicable.
 
 ## Comment je l'ai construit
 
