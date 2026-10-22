@@ -2,16 +2,16 @@ Enregistrements : 9170
 
 Champs (présence, longueur moyenne, exemple) :
 - type : 9170 | 8 car. | Contenu
-- titre : 9170 | 157 car. | IR - Réductions et crédits d'impôt - Réduction d'impôt au titre de l'acquisition ou de la construction de logements sociaux outre-mer - Champ d'application - Rè
-- debut_de_validite : 9170 | 10 car. | 2021-06-09
-- serie : 9170 | 3 car. | IR
-- division : 9170 | 4 car. | RICI
-- identifiant_juridique : 9170 | 18 car. | BOI-IR-RICI-380-10-30
-- permalien : 9170 | 84 car. | https://bofip.impots.gouv.fr/bofip/9406-PGP.html/identifiant=BOI-IR-RICI-380-10-30-20210609
-- contenu : 9170 | 8770 car. | 1  Outre les investissements réalisés de manière directe, les personnes physiques peuvent également réaliser de tels investissements par l’intermédiaire&nbsp;
-- contenu_html : 9170 | 12575 car. | <p class=""numero-de-paragraphe-western"" id=""1_01"">1</p>  <p class=""paragraphe-western"" id=""Outre_les_investissements_r_02"">Outre les investissements réa
+- titre : 9170 | 157 car. | TVA - Régimes d'imposition et obligations déclaratives et comptables - Obligations et formalités déclaratives - Obligations et formalités particulières - Mesure
+- debut_de_validite : 9170 | 10 car. | 2012-09-12
+- serie : 9170 | 3 car. | TVA
+- division : 9170 | 4 car. | DECLA
+- identifiant_juridique : 9170 | 18 car. | BOI-TVA-DECLA-20-30-20-30
+- permalien : 9170 | 84 car. | https://bofip.impots.gouv.fr/bofip/1054-PGP.html/identifiant=BOI-TVA-DECLA-20-30-20-30-20120912
+- contenu : 9170 | 8665 car. | 1 Outre les obligations communes aux redevables de la TVA auxquelles ils sont soumis, les exploitants de lieux de spectacles comportant un prix d'entrée doivent
+- contenu_html : 9170 | 12433 car. | <p class=""numero-de-paragraphe-western"" id=""1_00"">1</p> <p class=""paragraphe-western"" id=""Outre_les_obligations_commu_01"">Outre les obligations communes
 
-Champs retenus : {"text": "contenu_html", "id": "identifiant_juridique", "title": "titre", "date": "", "url": "permalien"}
+Champs retenus : {"text": "contenu_html", "id": "identifiant_juridique", "title": "titre", "date": "debut_de_validite", "url": "permalien"}
 
 Séries présentes (documents) : [["BIC", 753], ["IS", 496], ["TVA", 495], ["IF", 492], ["IR", 389], ["ENR", 335], ["INT", 322], ["ANNX", 307], ["RPPM", 280], ["CTX", 212], ["REC", 209], ["CF", 208], ["LETTRE", 203], ["PAT", 184], ["RES", 182], ["RSA", 171], ["RFPI", 164], ["BA", 153], ["BNC", 146], ["DJC", 110], ["TCA", 95], ["FORM", 90], ["CAD", 78], ["SJ", 62], ["TCAS", 53], ["TFP", 39], ["BAREME", 38], ["TPS", 34], ["CVAE", 29], ["AIS", 20], ["IMG", 9], ["CARTE", 6], ["DAE", 5], ["ANNEXES", 1]]
-Documents retenus : 949 (séries ['ENR', 'IFI', 'PAT', 'RFPI', 'RPPM'])
+Documents retenus : 949 (séries ['ENR', 'PAT', 'RFPI', 'RPPM'])
