@@ -1,131 +1,147 @@
 # RAG fiscal
 
-**Questions-réponses sourcées sur la doctrine fiscale française (BOFiP), pensées pour les conseillers en gestion de patrimoine.**
+Un assistant qui répond aux questions de fiscalité patrimoniale à partir de la doctrine officielle (le BOFiP),
+qui cite le passage exact derrière chaque réponse, et qui préfère dire « je ne sais pas » plutôt que d'inventer.
 
-Le système répond uniquement à partir des textes du BOFiP, cite le passage exact derrière chaque affirmation,
-et préfère ne pas répondre plutôt que d'inventer. Il est construit comme un service de production :
-recherche hybride, reranking, garde-fous contre les hallucinations, prompts versionnés en A/B, évaluation
-automatisée, supervision et traces.
+## Pourquoi ce projet
 
-> Pourquoi ce sujet : j'ai passé un an à la DGFiP, dans le service qui exploite les données fiscales pour
-> sélectionner les dossiers à contrôler. La doctrine fiscale y est le texte de référence au quotidien.
+J'ai passé un an à la DGFiP, dans le service qui exploite les données fiscales pour choisir les dossiers à
+contrôler. J'y ai vu à quel point la doctrine fiscale est dense, et à quel point une réponse approximative peut
+coûter cher.
 
-## Résultats
+Un conseiller en gestion de patrimoine qui s'interroge sur l'IFI ou sur une donation n'a pas besoin d'une réponse
+brillante. Il a besoin d'une réponse juste, avec la référence du texte pour pouvoir vérifier. J'ai voulu
+construire un RAG qui tient cette promesse, et surtout mesurer s'il la tient vraiment.
 
-<!-- RESULTS:START -->
-Évaluation sur le corpus réel (949 documents, 12 310 passages) avec 24 questions annotées à la main et
-8 questions hors périmètre. Rapport complet, régénéré par la CI : [eval/REPORT.md](eval/REPORT.md).
+## Ce que fait l'outil
 
-| Configuration | Hit@1 | Hit@5 | MRR@10 |
-|---|---|---|---|
-| Dense (multilingual-e5) | 38 % | 83 % | 0,58 |
-| Creuse (BM25) | 54 % | 96 % | 0,68 |
-| Hybride (RRF) | 46 % | 92 % | 0,64 |
-| **Hybride + reranking cross-encoder** | **71 %** | **92 %** | **0,79** |
+On lui pose une question en français. Il cherche dans 949 documents du BOFiP (revenus de capitaux mobiliers,
+IFI, successions et donations, revenus fonciers), garde les cinq passages les plus pertinents, puis rédige une
+réponse dont chaque phrase renvoie à l'un d'eux.
 
-- **Le reranking fait passer le bon document en tête de 46 % à 71 % des questions** : c'est l'étape qui compte le plus pour la qualité des réponses, puisque le LLM s'appuie d'abord sur les premiers passages.
-- **La recherche par mots-clés seule est déjà très forte** (96 % en Hit@5) : les questions fiscales emploient le vocabulaire exact des textes (« abattement », « micro-foncier », « IFI »). La recherche dense apporte surtout de la robustesse aux reformulations, que ce jeu de questions mesure mal.
-- **Abstention** : le score du meilleur passage vaut 0,98 en médiane pour les questions du périmètre, contre 0,02 hors périmètre. Le seuil est fixé à 0,6 d'après ces mesures.
+Deux situations le poussent à ne pas répondre normalement :
 
-Limites de cette évaluation : 32 questions, c'est assez pour comparer des configurations, pas pour annoncer une
-performance générale ; le seuil d'abstention a été calibré sur ces mêmes questions, il demande à être validé sur
-un jeu distinct. La latence (environ 3 s avec reranking) est mesurée sur le processeur d'un serveur de CI, avec
-Qdrant embarqué : un serveur Qdrant et un GPU la réduiraient fortement.
-<!-- RESULTS:END -->
+- **Aucun passage n'est assez pertinent** : il s'abstient et le dit clairement.
+- **Le LLM ne répond pas, ou cite une source qui n'existe pas** : l'API renvoie directement les passages
+  trouvés, avec leurs références, plutôt qu'une réponse douteuse.
 
-## Architecture
+## Comment ça marche
 
 ```mermaid
 flowchart LR
-    A["data.gouv.fr<br/>BOFiP en vigueur"] -->|GitHub Actions| B["Corpus normalisé<br/>séries RPPM, PAT (IFI), ENR, RFPI"]
-    B --> C["Découpage par paragraphes<br/>numérotés + titre"]
-    C --> D["Vecteur dense<br/>multilingual-e5"]
-    C --> E["Vecteur creux<br/>BM25, IDF Qdrant"]
-    D & E --> F[("Qdrant")]
-    Q["Question"] --> G["Recherche hybride<br/>fusion RRF + filtres"]
-    F --> G
-    G --> H["Reranking<br/>cross-encoder"]
-    H --> I{"Score suffisant ?"}
-    I -- non --> X["Abstention"]
-    I -- oui --> J["LLM + prompt versionné<br/>A/B déterministe"]
-    J --> K{"Citations valides ?"}
-    K -- oui --> R["Réponse citée"]
-    K -- non --> M["Mode dégradé :<br/>passages cités"]
+    A["Question"] --> B["Recherche par mots-clés<br/>et par le sens"]
+    B --> C["Reclassement<br/>des 30 meilleurs passages"]
+    C --> D{"Passage assez<br/>pertinent ?"}
+    D -- non --> E["Abstention"]
+    D -- oui --> F["Réponse du LLM<br/>avec citations"]
+    F --> G{"Citations<br/>valides ?"}
+    G -- oui --> H["Réponse citée"]
+    G -- non --> I["Passages cités,<br/>sans reformulation"]
 ```
 
-| Étape | Choix | Pourquoi |
-|---|---|---|
-| Découpage | Par paragraphes numérotés du BOFiP, recouvrement d'un paragraphe, titre en en-tête | Ne jamais couper une règle en deux ; chaque passage reste compréhensible seul |
-| Recherche | Hybride : dense (sens) + creux (mots-clés), fusion RRF | Les questions fiscales mêlent vocabulaire exact (« IFI », « article 150-0 B ») et formulations libres |
-| Filtres | Série du BOFiP, date de publication, tenant | Restreindre à un impôt ; isoler les documents de chaque client |
-| Reranking | Cross-encoder multilingue sur 30 candidats | Meilleure précision sur les premiers résultats, et un score exploitable pour l'abstention |
-| Génération | Gemini ou toute API compatible OpenAI, température 0 | Indépendance vis-à-vis du fournisseur |
+**Le découpage.** Le BOFiP est organisé en paragraphes numérotés (10, 20, 30...). Je découpe sur ces numéros,
+pour ne jamais couper une règle en deux, et j'ajoute le titre du document en tête de chaque passage, pour qu'il
+reste compréhensible seul.
 
-## Garde-fous contre les hallucinations
+**La recherche.** Deux recherches tournent en parallèle dans Qdrant : l'une par mots-clés (BM25), l'autre par le
+sens du texte (embeddings multilingual-e5). Leurs classements sont fusionnés, puis un second modèle relit les 30
+meilleurs candidats pour ne garder que les cinq plus pertinents. On peut aussi filtrer par impôt ou par date.
 
-1. **Abstention avant génération** : si le meilleur passage n'atteint pas le seuil de pertinence (calibré par l'évaluation), le système ne répond pas.
-2. **Ancrage** : le LLM ne voit que des extraits numérotés et doit citer `[n]` après chaque affirmation, ou répondre `ABSTENTION`.
-3. **Vérification des citations** : une réponse sans citation, ou qui cite un extrait inexistant, n'est jamais renvoyée. L'API bascule sur une réponse extractive, qui ne peut pas inventer.
-4. **Mode dégradé** : si le LLM est indisponible (délai dépassé, quota, erreur), l'API répond quand même avec les passages cités, et une alerte se déclenche.
+**La génération.** Le LLM ne voit que ces cinq passages, numérotés, et doit citer `[n]` après chaque affirmation.
+Les consignes (prompts) sont versionnées, et deux versions peuvent être comparées en A/B : chaque
+utilisateur reste affecté à la même version pendant tout le test. Gemini et toutes les API compatibles OpenAI sont pris en charge.
 
-## LLMOps
+**Le service.** Une API FastAPI, avec une clé par client : chaque client ne voit que les documents publics et
+les siens. Les métriques partent vers Prometheus et Grafana, avec des alertes (trop d'abstentions, LLM
+indisponible, latence), et chaque requête est tracée avec OpenTelemetry.
 
-- **Prompts versionnés** (`prompts/v1.yaml`, `prompts/v2.yaml`) et **A/B testing** déterministe : un même utilisateur garde la même version. La répartition se règle sans redéploiement (`RAG_PROMPT_AB=v1:90,v2:10`), et le retour arrière se fait en remettant `v1:100`.
-- **Évaluation continue** : `eval/run_eval.py` mesure Hit@1, Hit@5 et MRR pour chaque configuration (dense, creux, hybride, hybride + reranking), l'abstention à tort et à raison, et, avec une clé LLM, le taux de réponses rejetées par la vérification des citations, par version de prompt. La CI régénère le rapport.
-- **Supervision** : métriques Prometheus (latence par étape, réponses par mode et par version de prompt, abstentions, rejets de citations, score du meilleur passage), tableau de bord Grafana provisionné, alertes (taux d'abstention, mode dégradé, latence), traces OpenTelemetry vers Jaeger.
+## Ce que j'ai appris en le construisant
 
-## Sécurité et multi-tenant
+**Mon premier découpage était faux.** Dans les données publiées, chaque numéro de paragraphe est seul sur sa
+ligne, et mon découpage les rattachait au mauvais passage. Je ne l'ai vu qu'en ouvrant les vrais documents.
 
-- Chaque client s'authentifie par une clé d'API, associée à un tenant (`RAG_API_KEYS=cle:tenant`).
-- Le tenant filtre la recherche dans Qdrant : un client voit les documents publics et les siens, jamais ceux d'un autre. Ce cloisonnement est testé.
-- Une passerelle OIDC (Keycloak, par exemple) peut se placer devant l'API et transmettre l'identité du client. Elle n'est pas incluse ici.
-- Les questions ne sont pas journalisées : seules des métriques agrégées sont exposées.
+**La recherche par mots-clés est redoutable sur ce sujet.** Le vocabulaire fiscal est précis (« abattement »,
+« micro-foncier », « nue-propriété »), et la recherche par mots-clés seule retrouve le bon document parmi les cinq
+premiers pour 96 % des questions. La recherche hybride ne l'a pas battue sur mon jeu de test. Je la garde parce
+qu'elle devrait mieux résister aux questions mal formulées, mais il me faut un jeu de questions reformulées pour
+le prouver.
 
-## Démarrer
+**Le reclassement change tout.** Sans lui, le bon document arrive en tête pour 46 % des questions ; avec lui,
+pour 71 %. C'est l'étape qui compte le plus, puisque le LLM s'appuie d'abord sur les premiers passages.
 
-En local, sans LLM (mode extractif : l'API renvoie les passages cités). Les modèles d'embeddings et de reranking
-sont téléchargés au premier lancement, puis l'index est construit en mémoire :
+**Les contraintes réelles décident de l'architecture.** Le quota gratuit de Gemini est de 20 requêtes par jour :
+l'évaluation de la génération se fait donc sur un échantillon, et seulement à la demande. Ma première évaluation
+a tourné 30 minutes sur le processeur d'un serveur de CI : j'ai raccourci les textes analysés et mis l'index en
+cache pour les suivantes.
+
+**Le seuil d'abstention se mesure, il ne se devine pas.** Le meilleur passage obtient un score médian de 0,98
+pour les questions du périmètre, contre 0,02 pour les questions hors sujet. J'ai fixé le seuil à 0,6 d'après ces
+mesures.
+
+## Résultats
+
+24 questions annotées à la main sur les documents, plus 8 questions hors périmètre (TVA, impôt sur les sociétés,
+cuisine...). Le rapport complet est régénéré par la CI : [eval/REPORT.md](eval/REPORT.md).
+
+| Configuration | Bon document en tête | Dans les cinq premiers | MRR |
+|---|---|---|---|
+| Sens du texte seul | 38 % | 83 % | 0,58 |
+| Mots-clés seuls | 54 % | 96 % | 0,68 |
+| Les deux, fusionnés | 46 % | 92 % | 0,64 |
+| **Les deux, puis reclassement** | **71 %** | **92 %** | **0,79** |
+
+Ces chiffres ont leurs limites. 32 questions suffisent pour comparer des réglages, pas pour annoncer une
+performance générale, et le seuil d'abstention a été calibré sur ces mêmes questions. La latence, autour de
+3 secondes avec reclassement, est mesurée sur le processeur d'un serveur de CI : un serveur Qdrant et un GPU la
+réduiraient fortement.
+
+## Le lancer
+
+Sans LLM, l'API renvoie les passages cités. Les modèles sont téléchargés au premier lancement :
 
 ```bash
 pip install -r requirements-dev.txt -r requirements-ml.txt
 uvicorn rag_fiscal.api.main:app --app-dir src
 curl -s localhost:8000/ask -H 'Content-Type: application/json' \
-  -d '{"question": "Quel abattement s'\''applique à la résidence principale pour l'\''IFI ?", "series": ["PAT"]}'
+  -d '{"question": "Quel abattement s'\''applique à la résidence principale pour l'\''IFI ?"}'
 ```
 
-Pile complète (Qdrant, API, Prometheus, Grafana, Jaeger) :
+Avec un LLM et la supervision complète (Qdrant, Prometheus, Grafana, Jaeger) :
 
 ```bash
-cp .env.example .env              # renseigner RAG_LLM_PROVIDER et RAG_LLM_API_KEY pour la génération
+cp .env.example .env              # renseigner RAG_LLM_PROVIDER et RAG_LLM_API_KEY
 docker compose up -d qdrant
 docker compose run --rm api python scripts/build_index.py
 docker compose up -d              # API :8000, Grafana :3000, Prometheus :9090, Jaeger :16686
 ```
 
-Tests (encodeur sans modèle, Qdrant embarqué, aucun accès réseau) : `pytest -q`
+Les tests tournent sans modèle ni réseau : `pytest -q`
 
-## Structure
+## Ce qu'il reste à faire
+
+- Un jeu d'évaluation plus large, avec des questions reformulées, et un jeu distinct pour calibrer le seuil.
+- Mesurer la fidélité des réponses générées, au-delà de la vérification des citations.
+- Placer une authentification OIDC (Keycloak, par exemple) devant l'API.
+- Étendre le corpus au reste de la doctrine.
+
+Ce n'est pas un outil de conseil fiscal : il aide à retrouver la doctrine applicable, il ne la remplace pas.
+
+## Comment je l'ai construit
+
+J'ai développé ce projet avec Claude Code, utilisé comme binôme de programmation. Le code est couvert par des
+tests et une intégration continue, et l'évaluation tourne automatiquement à chaque modification.
 
 ```
 src/rag_fiscal/
-  ingest/chunking.py     chargement du corpus et découpage
-  index/encoders.py      vecteurs denses (e5) et creux (BM25)
-  index/store.py         Qdrant : index, recherche hybride, filtres, multi-tenant
-  retrieve/rerank.py     reranking (cross-encoder, lexical, aucun)
-  generate/answer.py     prompts versionnés, A/B, citations, abstention, mode dégradé
-  generate/llm.py        clients Gemini et compatibles OpenAI
-  pipeline.py            orchestration, métriques et traces par étape
-  api/main.py            FastAPI : /ask, /health, /metrics
-scripts/fetch_bofip.py   téléchargement et normalisation du BOFiP (data.gouv.fr)
-eval/                    questions annotées, évaluation, rapport
-monitoring/              Prometheus (alertes), Grafana (tableau de bord)
+  ingest/      chargement du corpus et découpage
+  index/       embeddings, BM25 et index Qdrant
+  retrieve/    reclassement des résultats
+  generate/    prompts versionnés, citations, abstention
+  api/         API FastAPI
+scripts/       téléchargement du BOFiP, construction de l'index
+eval/          questions annotées, évaluation, rapport
+monitoring/    Prometheus, Grafana, alertes
 ```
 
-## Limites
-
-- Le corpus couvre les séries patrimoniales du BOFiP, soit 949 documents : revenus et plus-values de capitaux mobiliers (RPPM), patrimoine et IFI (PAT), enregistrement, successions et donations (ENR), revenus fonciers et plus-values immobilières (RFPI). Pas l'ensemble de la doctrine.
-- Le jeu d'évaluation est annoté à la main et reste de taille modeste.
-- Pas de mémoire de conversation ni d'agents : une question, une réponse sourcée.
-- Ce n'est pas un conseil fiscal : l'outil aide à retrouver la doctrine applicable, il ne la remplace pas.
-
-Données : BOFiP-Impôts, publications en vigueur, jeu de données public de [data.gouv.fr](https://www.data.gouv.fr/datasets/bofip-impots-publications-en-vigueur).
+Données : BOFiP-Impôts, publications en vigueur, jeu de données public de
+[data.gouv.fr](https://www.data.gouv.fr/datasets/bofip-impots-publications-en-vigueur).
