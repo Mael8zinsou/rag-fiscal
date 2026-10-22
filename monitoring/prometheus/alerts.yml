@@ -1,0 +1,27 @@
+groups:
+  - name: rag-fiscal
+    rules:
+      - alert: TauxAbstentionEleve
+        expr: sum(rate(rag_answers_total{abstained="true"}[30m])) / sum(rate(rag_answers_total[30m])) > 0.4
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Plus de 40 % d'abstentions : corpus incomplet, questions hors périmètre ou recherche dégradée"
+      - alert: ReponsesRejeteesParLaVerificationDesCitations
+        expr: sum(rate(rag_grounding_issues_total[30m])) / sum(rate(rag_answers_total{mode=~"llm|degraded"}[30m])) > 0.1
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Plus de 10 % des réponses du LLM citent mal leurs sources : vérifier le prompt ou le modèle"
+      - alert: ModeDegradeActif
+        expr: sum(rate(rag_answers_total{mode="degraded"}[10m])) > 0
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: "Le LLM est indisponible ou rejeté : l'API répond en mode extractif"
+      - alert: LatenceGenerationElevee
+        expr: histogram_quantile(0.95, sum(rate(rag_stage_seconds_bucket{stage="generate"}[10m])) by (le)) > 5
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Latence p95 de génération supérieure à 5 s"

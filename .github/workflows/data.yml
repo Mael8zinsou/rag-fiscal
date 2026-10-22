@@ -1,0 +1,28 @@
+name: Données BOFiP
+
+# Télécharge le jeu « BOFiP Impôts, publications en vigueur » (data.gouv.fr), en extrait le sous-corpus
+# patrimonial (RPPM, IFI, ENR, RFPI, PAT) et le versionne dans data/.
+on:
+  workflow_dispatch:
+  push:
+    paths: ["scripts/fetch_bofip.py", ".github/workflows/data.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Télécharger et normaliser
+        run: python scripts/fetch_bofip.py --out data/bofip_subset.jsonl.gz --report data/schema_report.txt
+      - name: Versionner le corpus
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/bofip_subset.jsonl.gz data/schema_report.txt
+          git diff --cached --quiet || git commit -m "data: corpus BOFiP patrimonial mis à jour [skip ci]"
+          git push

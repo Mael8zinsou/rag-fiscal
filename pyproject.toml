@@ -1,0 +1,17 @@
+[project]
+name = "rag-fiscal"
+version = "0.1.0"
+description = "RAG sourcé sur la doctrine fiscale française (BOFiP) : recherche hybride, reranking, citations vérifiées, LLMOps."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 130
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008", "B905"]

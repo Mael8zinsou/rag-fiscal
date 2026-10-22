@@ -1,0 +1,4 @@
+# Modèles d'embeddings et de reranking (CPU suffit pour ce corpus)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+sentence-transformers>=3.0
