@@ -21,7 +21,7 @@ régénérés automatiquement par la CI à chaque changement du code, des prompt
 
 ```mermaid
 flowchart LR
-    A[data.gouv.fr<br/>BOFiP en vigueur] -->|GitHub Actions| B[Corpus normalisé<br/>séries RPPM, IFI, ENR, RFPI, PAT]
+    A[data.gouv.fr<br/>BOFiP en vigueur] -->|GitHub Actions| B[Corpus normalisé<br/>séries RPPM, PAT (IFI), ENR, RFPI]
     B --> C[Découpage par paragraphes<br/>numérotés + titre]
     C --> D[Vecteur dense<br/>multilingual-e5]
     C --> E[Vecteur creux<br/>BM25, IDF Qdrant]
@@ -107,7 +107,7 @@ monitoring/              Prometheus (alertes), Grafana (tableau de bord)
 
 ## Limites
 
-- Le corpus couvre les séries patrimoniales du BOFiP (revenus de capitaux mobiliers, IFI, enregistrement, revenus fonciers, patrimoine), pas l'ensemble de la doctrine.
+- Le corpus couvre les séries patrimoniales du BOFiP, soit 949 documents : revenus et plus-values de capitaux mobiliers (RPPM), patrimoine et IFI (PAT), enregistrement, successions et donations (ENR), revenus fonciers et plus-values immobilières (RFPI). Pas l'ensemble de la doctrine.
 - Le jeu d'évaluation est annoté à la main et reste de taille modeste.
 - Pas de mémoire de conversation ni d'agents : une question, une réponse sourcée.
 - Ce n'est pas un conseil fiscal : l'outil aide à retrouver la doctrine applicable, il ne la remplace pas.

@@ -61,12 +61,27 @@ def load_corpus(path: str | Path) -> list[Document]:
     return docs
 
 
-_SPLIT_RE = re.compile(r"\n\s*\n|\n(?=\d{1,4}\s)")
+_PARA_NUM_RE = re.compile(r"^\d{1,4}$")
 
 
 def paragraphs(text: str) -> list[str]:
-    parts = [p.strip() for p in _SPLIT_RE.split(text)]
-    return [p for p in parts if p]
+    """Découpe sur les numéros de paragraphe du BOFiP (une ligne « 10 », « 20 »...) et sur les lignes vides.
+
+    Le numéro est conservé en tête du paragraphe (« 10 L'impôt... ») : il sert de repère dans les citations.
+    """
+    paras: list[str] = []
+    current: list[str] = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or _PARA_NUM_RE.match(line):
+            if current:
+                paras.append(" ".join(current))
+            current = [line] if line else []
+            continue
+        current.append(line)
+    if current:
+        paras.append(" ".join(current))
+    return [p for p in paras if not _PARA_NUM_RE.match(p)]
 
 
 def chunk_document(doc: Document, max_chars: int = 1200, overlap: int = 1) -> list[Chunk]:

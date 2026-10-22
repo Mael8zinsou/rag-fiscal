@@ -1,0 +1,32 @@
+{"id": "in-01", "question": "Quel abattement s'applique à la valeur de la résidence principale pour l'IFI ?", "expected": ["BOI-PAT-IFI-20-30-20"]}
+{"id": "in-02", "question": "À partir de quel montant de patrimoine immobilier net un foyer paie-t-il l'IFI, et quel est le barème ?", "expected": ["BOI-PAT-IFI-40-10"]}
+{"id": "in-03", "question": "Comment fonctionne le plafonnement de l'IFI en fonction des revenus ?", "expected": ["BOI-PAT-IFI-40-30"]}
+{"id": "in-04", "question": "Quelles dettes peut-on déduire de l'assiette de l'IFI ?", "expected": ["BOI-PAT-IFI-20-40-10"]}
+{"id": "in-05", "question": "Comment un bien démembré est-il pris en compte à l'IFI, chez l'usufruitier ou chez le nu-propriétaire ?", "expected": ["BOI-PAT-IFI-20-20-30-10"]}
+{"id": "in-06", "question": "Quel est le taux forfaitaire d'impôt sur le revenu applicable aux dividendes et aux intérêts ?", "expected": ["BOI-RPPM-RCM-20-15"]}
+{"id": "in-07", "question": "Un contribuable peut-il choisir le barème progressif plutôt que le taux forfaitaire pour ses revenus de capitaux mobiliers ?", "expected": ["BOI-RPPM-RCM-20-15"]}
+{"id": "in-08", "question": "Quel abattement s'applique aux dividendes lorsque le contribuable opte pour le barème progressif ?", "expected": ["BOI-RPPM-RCM-20-10-30-10"]}
+{"id": "in-09", "question": "Combien de temps faut-il conserver un PEA pour que les gains soient exonérés d'impôt sur le revenu ?", "expected": ["BOI-RPPM-RCM-40-50-30"]}
+{"id": "in-10", "question": "Quels titres peut-on détenir dans un plan d'épargne en actions ?", "expected": ["BOI-RPPM-RCM-40-50-20"]}
+{"id": "in-11", "question": "Comment est calculé l'abattement pour durée de détention sur les plus-values de cession d'actions ?", "expected": ["BOI-RPPM-PVBMI-20-20"]}
+{"id": "in-12", "question": "Jusqu'à quel montant de loyers bruts annuels peut-on bénéficier du régime micro-foncier ?", "expected": ["BOI-RFPI-DECLA-10"]}
+{"id": "in-13", "question": "Dans quelle limite un déficit foncier s'impute-t-il sur le revenu global ?", "expected": ["BOI-RFPI-BASE-30-20"]}
+{"id": "in-14", "question": "Comment sont imposés les loyers d'un bien détenu en indivision ou en démembrement de propriété ?", "expected": ["BOI-RFPI-CHAMP-30-30"]}
+{"id": "in-15", "question": "La vente de sa résidence principale est-elle exonérée d'impôt sur la plus-value immobilière ?", "expected": ["BOI-RFPI-PVI-10-40-10"]}
+{"id": "in-16", "question": "Quel est le montant de l'abattement dont bénéficie chaque enfant sur une succession ?", "expected": ["BOI-ENR-DMTG-10-50-20"]}
+{"id": "in-17", "question": "Quel est le barème des droits de succession ?", "expected": ["BOI-ENR-DMTG-10-50-30"]}
+{"id": "in-18", "question": "Quelles sont les conditions d'exonération des dons de sommes d'argent à un enfant ou un petit-enfant ?", "expected": ["BOI-ENR-DMTG-20-20-20"]}
+{"id": "in-19", "question": "Comment évalue-t-on l'usufruit et la nue-propriété transmis lors d'une succession ?", "expected": ["BOI-ENR-DMTG-10-40-10-50"]}
+{"id": "in-20", "question": "Comment sont taxés les capitaux décès d'une assurance vie pour les primes versées après soixante-dix ans ?", "expected": ["BOI-ENR-DMTG-10-10-20-20"]}
+{"id": "in-21", "question": "Quelles sont les conditions de l'exonération partielle de droits lors de la transmission d'une entreprise familiale avec engagement de conservation ?", "expected": ["BOI-ENR-DMTG-10-20-40"]}
+{"id": "in-22", "question": "L'abattement sur les donations aux petits-enfants se renouvelle-t-il, et au bout de combien de temps ?", "expected": ["BOI-ENR-DMTG-20-30-20-20"]}
+{"id": "in-23", "question": "Quelles dettes du défunt ne sont pas déductibles de l'actif de la succession ?", "expected": ["BOI-ENR-DMTG-10-40-20-20"]}
+{"id": "in-24", "question": "Comment s'applique la clause de tontine aux droits de mutation ?", "expected": ["BOI-ENR-DMTG-10-10-10-10"]}
+{"id": "out-01", "question": "Quel est le taux de TVA applicable à la restauration sur place ?", "expected": []}
+{"id": "out-02", "question": "Comment calcule-t-on l'impôt sur les sociétés d'une PME ?", "expected": []}
+{"id": "out-03", "question": "Quelle est la recette de la tarte Tatin ?", "expected": []}
+{"id": "out-04", "question": "Qui a gagné la Coupe du monde de football en 2018 ?", "expected": []}
+{"id": "out-05", "question": "Comment déclarer les bénéfices d'une micro-entreprise de vente de marchandises ?", "expected": []}
+{"id": "out-06", "question": "Quel est le délai de prescription d'une contravention routière ?", "expected": []}
+{"id": "out-07", "question": "Comment est calculée la taxe foncière sur les propriétés bâties ?", "expected": []}
+{"id": "out-08", "question": "Quel est le prix moyen du mètre carré à Paris ?", "expected": []}

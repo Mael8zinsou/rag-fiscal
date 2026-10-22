@@ -8,7 +8,8 @@ def make_doc(n_paras: int, size: int = 120) -> Document:
 
 
 def test_paragraphs_split_on_numbered_paragraphs():
-    assert len(paragraphs("10\nPremier.\n\n20\nSecond.\n30 Troisième.")) == 3
+    paras = paragraphs(" 10\n Premier alinéa\n suite du même alinéa.\n 20\n Second.\n\n Note isolée.")
+    assert paras == ["10 Premier alinéa suite du même alinéa.", "20 Second.", "Note isolée."]
 
 
 def test_chunks_respect_max_size_and_carry_title():

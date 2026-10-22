@@ -4,7 +4,7 @@ Le fichier source n'a pas de schéma documenté : le script détecte lui-même l
 titre, date, texte), écrit un rapport de schéma, puis un corpus normalisé au format JSON Lines compressé.
 
 Usage :
-    python scripts/fetch_bofip.py --out data/bofip_subset.jsonl.gz --series RPPM,IFI,ENR,RFPI,PAT
+    python scripts/fetch_bofip.py --out data/bofip_subset.jsonl.gz --series RPPM,ENR,RFPI,PAT
 """
 
 from __future__ import annotations
@@ -82,7 +82,7 @@ def pick_fields(records: list[dict]) -> dict[str, str]:
     text_field = max(keys, key=avg_len)
     id_field = max(keys, key=share_boi)
     title_field = next((k for k in keys if re.search(r"titre|title", k, re.I)), None)
-    date_field = next((k for k in keys if re.search(r"date", k, re.I)), None)
+    date_field = next((k for k in keys if re.search(r"date|validite", k, re.I)), None)
     url_field = next((k for k in keys if re.search(r"url|lien|permalien", k, re.I)), None)
     return {"text": text_field, "id": id_field, "title": title_field or "", "date": date_field or "", "url": url_field or ""}
 
@@ -106,7 +106,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="data/bofip_subset.jsonl.gz")
     ap.add_argument("--report", default="data/schema_report.txt")
-    ap.add_argument("--series", default="RPPM,IFI,ENR,RFPI,PAT")
+    ap.add_argument("--series", default="RPPM,ENR,RFPI,PAT")
     ap.add_argument("--max-docs", type=int, default=1500)
     ap.add_argument("--source", default=SOURCE_URL)
     args = ap.parse_args()
