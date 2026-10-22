@@ -1,0 +1,66 @@
+{
+  "settings": {
+    "corpus_path": "/home/runner/work/rag-fiscal/rag-fiscal/data/bofip_subset.jsonl.gz",
+    "qdrant_url": "None",
+    "qdrant_path": ".qdrant_eval",
+    "collection": "bofip",
+    "chunk_max_chars": "1200",
+    "chunk_overlap_paragraphs": "1",
+    "embedding_backend": "sentence-transformers",
+    "embedding_model": "intfloat/multilingual-e5-small",
+    "reranker_backend": "cross-encoder",
+    "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+    "prefetch_k": "30",
+    "top_k": "5",
+    "abstain_threshold": "0.35",
+    "llm_provider": "none",
+    "llm_model": "gemini-2.5-flash",
+    "llm_base_url": "https://api.openai.com/v1",
+    "llm_timeout_s": "20.0",
+    "prompt_ab": "v1:50,v2:50",
+    "api_keys": ""
+  },
+  "corpus": {
+    "documents": 949,
+    "chunks": 12310
+  },
+  "questions": {
+    "in_scope": 24,
+    "out_of_scope": 8
+  },
+  "retrieval": {
+    "dense": {
+      "hit@1": 0.375,
+      "hit@5": 0.8333333333333334,
+      "mrr@10": 0.5847222222222223,
+      "latency_ms_p50": 226.8952365000132
+    },
+    "sparse": {
+      "hit@1": 0.5416666666666666,
+      "hit@5": 0.9583333333333334,
+      "mrr@10": 0.6777777777777778,
+      "latency_ms_p50": 419.79405549989224
+    },
+    "hybrid": {
+      "hit@1": 0.4583333333333333,
+      "hit@5": 0.9166666666666666,
+      "mrr@10": 0.6416666666666667,
+      "latency_ms_p50": 832.5787654998749
+    },
+    "hybrid + rerank": {
+      "hit@1": 0.7083333333333334,
+      "hit@5": 0.9166666666666666,
+      "mrr@10": 0.7930555555555555,
+      "latency_ms_p50": 3355.308792500068
+    }
+  },
+  "abstention": {
+    "threshold": 0.35,
+    "suggested_threshold": 0.634,
+    "suggested_balanced_accuracy": 0.9583333333333333,
+    "false_abstention_rate": 0.08333333333333333,
+    "correct_abstention_rate": 0.75,
+    "in_scope_top_score_median": 0.9790198587082857,
+    "out_scope_top_score_median": 0.024156571203560552
+  }
+}
