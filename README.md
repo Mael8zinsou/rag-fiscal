@@ -13,8 +13,24 @@ automatisée, supervision et traces.
 ## Résultats
 
 <!-- RESULTS:START -->
-Les résultats de l'évaluation sur le corpus réel sont publiés dans [eval/REPORT.md](eval/REPORT.md),
-régénérés automatiquement par la CI à chaque changement du code, des prompts ou du corpus.
+Évaluation sur le corpus réel (949 documents, 12 310 passages) avec 24 questions annotées à la main et
+8 questions hors périmètre. Rapport complet, régénéré par la CI : [eval/REPORT.md](eval/REPORT.md).
+
+| Configuration | Hit@1 | Hit@5 | MRR@10 |
+|---|---|---|---|
+| Dense (multilingual-e5) | 38 % | 83 % | 0,58 |
+| Creuse (BM25) | 54 % | 96 % | 0,68 |
+| Hybride (RRF) | 46 % | 92 % | 0,64 |
+| **Hybride + reranking cross-encoder** | **71 %** | **92 %** | **0,79** |
+
+- **Le reranking fait passer le bon document en tête de 46 % à 71 % des questions** : c'est l'étape qui compte le plus pour la qualité des réponses, puisque le LLM s'appuie d'abord sur les premiers passages.
+- **La recherche par mots-clés seule est déjà très forte** (96 % en Hit@5) : les questions fiscales emploient le vocabulaire exact des textes (« abattement », « micro-foncier », « IFI »). La recherche dense apporte surtout de la robustesse aux reformulations, que ce jeu de questions mesure mal.
+- **Abstention** : le score du meilleur passage vaut 0,98 en médiane pour les questions du périmètre, contre 0,02 hors périmètre. Le seuil est fixé à 0,6 d'après ces mesures.
+
+Limites de cette évaluation : 32 questions, c'est assez pour comparer des configurations, pas pour annoncer une
+performance générale ; le seuil d'abstention a été calibré sur ces mêmes questions, il demande à être validé sur
+un jeu distinct. La latence (environ 3 s avec reranking) est mesurée sur le processeur d'un serveur de CI, avec
+Qdrant embarqué : un serveur Qdrant et un GPU la réduiraient fortement.
 <!-- RESULTS:END -->
 
 ## Architecture

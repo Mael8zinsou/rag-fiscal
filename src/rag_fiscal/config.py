@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     reranker_model: str = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
     prefetch_k: int = 30
     top_k: int = 5
-    abstain_threshold: float = 0.35   # score de reranking minimal pour répondre (calibré par l'évaluation)
+    abstain_threshold: float = 0.6    # score de reranking minimal pour répondre, calibré par l'évaluation (eval/REPORT.md)
 
     # Génération
     llm_provider: str = "none"         # "none" (mode extractif), "gemini" ou "openai" (API compatible)
