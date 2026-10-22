@@ -101,7 +101,8 @@ class SentenceTransformerEncoder:
         from sentence_transformers import SentenceTransformer
 
         self.model = SentenceTransformer(model_name)
-        self.dim = self.model.get_sentence_embedding_dimension()
+        dim_fn = getattr(self.model, "get_embedding_dimension", None) or self.model.get_sentence_embedding_dimension
+        self.dim = dim_fn()
         self.batch_size = batch_size
         self.e5 = "e5" in model_name.lower()
 

@@ -55,31 +55,46 @@ def abstention_metrics(rag: RAGPipeline, in_scope: list[dict], out_scope: list[d
 
     in_scores = [top_score(q["question"]) for q in in_scope]
     out_scores = [top_score(q["question"]) for q in out_scope]
-    return {"threshold": threshold,
+    # Seuil qui équilibre au mieux les deux erreurs (abstention à tort, réponse hors périmètre)
+    candidates = sorted(set(in_scores + out_scores))
+    def balanced(t: float) -> float:
+        ok_in = statistics.mean(s >= t for s in in_scores)
+        ok_out = statistics.mean(s < t for s in out_scores) if out_scores else 1.0
+        return (ok_in + ok_out) / 2
+    best = max(candidates, key=balanced) if candidates else threshold
+    return {"threshold": threshold, "suggested_threshold": round(best, 3), "suggested_balanced_accuracy": balanced(best),
             "false_abstention_rate": statistics.mean(s < threshold for s in in_scores),
             "correct_abstention_rate": statistics.mean(s < threshold for s in out_scores) if out_scores else None,
             "in_scope_top_score_median": statistics.median(in_scores),
             "out_scope_top_score_median": statistics.median(out_scores) if out_scores else None}
 
 
-def generation_metrics(rag: RAGPipeline, in_scope: list[dict], out_scope: list[dict]) -> dict:
+def generation_metrics(rag: RAGPipeline, in_scope: list[dict], out_scope: list[dict], sample: int) -> dict:
+    """Évalue la génération sur un échantillon : le quota gratuit de Gemini est de 20 requêtes par jour."""
+    in_sample, out_sample = in_scope[:sample], out_scope[: max(1, sample // 3)]
     rows = {}
     for version in ("v1", "v2"):
-        modes, abst_in, abst_out, cited_ok = [], [], [], []
-        for q in in_scope:
-            a = rag.ask(q["question"], prompt_version=version).answer
-            modes.append(a.mode)
-            abst_in.append(a.abstained)
-            cited_ok.append(a.mode == "llm" and not a.abstained
-                            and any(is_relevant(c.doc_id, q["expected"]) for c in a.citations))
-        for q in out_scope:
-            abst_out.append(rag.ask(q["question"], prompt_version=version).answer.abstained)
-        rows[version] = {"llm_answers": modes.count("llm") / len(modes),
-                         "rejected_by_citation_check": modes.count("degraded") / len(modes),
-                         "false_abstention_rate": statistics.mean(abst_in),
-                         "correct_abstention_rate": statistics.mean(abst_out) if abst_out else None,
-                         "answers_citing_expected_source": statistics.mean(cited_ok)}
-        time.sleep(1)
+        answers_in, answers_out = [], []
+        for q in in_sample:
+            answers_in.append((q, rag.ask(q["question"], prompt_version=version).answer))
+            time.sleep(7)   # 10 requêtes par minute au maximum sur l'offre gratuite
+        for q in out_sample:
+            answers_out.append(rag.ask(q["question"], prompt_version=version).answer)
+            time.sleep(7)
+        answers = [a for _, a in answers_in]
+        unavailable = [a for a in answers if (a.grounding_issue or "").startswith("LLM indisponible")]
+        rejected = [a for a in answers if a.mode == "degraded" and a not in unavailable]
+        rows[version] = {
+            "questions": len(in_sample) + len(out_sample),
+            "llm_unavailable": len(unavailable) / len(answers),
+            "llm_answers": sum(a.mode == "llm" and not a.abstained for a in answers) / len(answers),
+            "rejected_by_citation_check": len(rejected) / len(answers),
+            "false_abstention_rate": statistics.mean(a.abstained for a in answers),
+            "correct_abstention_rate": statistics.mean(a.abstained for a in answers_out) if answers_out else None,
+            "answers_citing_expected_source": statistics.mean(
+                a.mode == "llm" and not a.abstained and any(is_relevant(c.doc_id, q["expected"]) for c in a.citations)
+                for q, a in answers_in),
+        }
     return rows
 
 
@@ -95,19 +110,22 @@ def write_report(results: dict, path: Path) -> None:
         lines.append(f"| {name} | {m['hit@1']:.0%} | {m['hit@5']:.0%} | {m['mrr@10']:.2f} | {m['latency_ms_p50']:.0f} ms |")
     a = results["abstention"]
     lines += ["", "## Abstention (seuil sur le score de reranking)", "",
-              f"- Seuil : {a['threshold']}",
+              f"- Seuil : {a['threshold']} (seuil qui équilibre le mieux les deux erreurs sur ce jeu : "
+              f"{a['suggested_threshold']}, exactitude équilibrée {a['suggested_balanced_accuracy']:.0%})",
               f"- Questions du périmètre où le système s'abstient à tort : {a['false_abstention_rate']:.0%}",
               f"- Questions hors périmètre où il s'abstient, comme attendu : {a['correct_abstention_rate']:.0%}",
               f"- Score médian du meilleur passage : {a['in_scope_top_score_median']:.2f} dans le périmètre, "
               f"{a['out_scope_top_score_median']:.2f} hors périmètre"]
     if results.get("generation"):
-        lines += ["", "## Génération (A/B des versions de prompt)", "",
-                  "| Prompt | Réponses LLM | Rejetées par la vérification des citations | Abstention à tort | "
-                  "Abstention hors périmètre | Citent la source attendue |", "|---|---|---|---|---|---|"]
+        n = next(iter(results["generation"].values()))["questions"]
+        lines += ["", f"## Génération (A/B des versions de prompt, échantillon de {n} questions par version)", "",
+                  "| Prompt | Réponses LLM citées | Rejetées par la vérification des citations | LLM indisponible (quota) | "
+                  "Abstention à tort | Abstention hors périmètre | Citent la source attendue |",
+                  "|---|---|---|---|---|---|---|"]
         for v, m in results["generation"].items():
             lines.append(f"| {v} | {m['llm_answers']:.0%} | {m['rejected_by_citation_check']:.0%} | "
-                         f"{m['false_abstention_rate']:.0%} | {m['correct_abstention_rate']:.0%} | "
-                         f"{m['answers_citing_expected_source']:.0%} |")
+                         f"{m['llm_unavailable']:.0%} | {m['false_abstention_rate']:.0%} | "
+                         f"{m['correct_abstention_rate']:.0%} | {m['answers_citing_expected_source']:.0%} |")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -117,6 +135,7 @@ def main() -> None:
     ap.add_argument("--out", default=str(ROOT / "eval" / "results.json"))
     ap.add_argument("--report", default=str(ROOT / "eval" / "REPORT.md"))
     ap.add_argument("--llm", action="store_true")
+    ap.add_argument("--llm-sample", type=int, default=6, help="questions du périmètre évaluées en génération, par prompt")
     args = ap.parse_args()
 
     settings = Settings()
@@ -137,7 +156,7 @@ def main() -> None:
         "abstention": abstention_metrics(rag, in_scope, out_scope, settings.abstain_threshold),
     }
     if args.llm and rag.llm is not None:
-        results["generation"] = generation_metrics(rag, in_scope, out_scope)
+        results["generation"] = generation_metrics(rag, in_scope, out_scope, args.llm_sample)
     Path(args.out).write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     write_report(results, Path(args.report))
     print(Path(args.report).read_text(encoding="utf-8"))

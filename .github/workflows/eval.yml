@@ -22,6 +22,8 @@ jobs:
     env:
       RAG_LLM_PROVIDER: ${{ secrets.RAG_LLM_API_KEY && 'gemini' || 'none' }}
       RAG_LLM_API_KEY: ${{ secrets.RAG_LLM_API_KEY }}
+      # Modèle distinct de celui de Mail Track AI : chaque modèle a son propre quota gratuit.
+      RAG_LLM_MODEL: gemini-2.5-flash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
