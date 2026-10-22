@@ -97,10 +97,11 @@ class HashingEncoder:
 class SentenceTransformerEncoder:
     """Modèle multilingual-e5 : les préfixes « query: » et « passage: » font partie de son entraînement."""
 
-    def __init__(self, model_name: str, batch_size: int = 32):
+    def __init__(self, model_name: str, batch_size: int = 64, max_seq_length: int = 256):
         from sentence_transformers import SentenceTransformer
 
         self.model = SentenceTransformer(model_name)
+        self.model.max_seq_length = max_seq_length   # passages d'environ 300 jetons : 256 suffit et divise le coût par deux
         dim_fn = getattr(self.model, "get_embedding_dimension", None) or self.model.get_sentence_embedding_dimension
         self.dim = dim_fn()
         self.batch_size = batch_size

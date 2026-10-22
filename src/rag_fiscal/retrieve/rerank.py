@@ -42,7 +42,7 @@ class CrossEncoderReranker:
     def __init__(self, model_name: str):
         from sentence_transformers import CrossEncoder
 
-        self.model = CrossEncoder(model_name, max_length=512)
+        self.model = CrossEncoder(model_name, max_length=256)
 
     def score(self, query: str, texts: Sequence[str]) -> list[float]:
         if not texts:

@@ -1,9 +1,15 @@
 name: Évaluation
 
 # Indexe le corpus BOFiP avec les vrais modèles (embeddings e5, reranker cross-encoder), puis mesure la
-# qualité de recherche, l'abstention et, si une clé LLM est fournie en secret, la génération (A/B des prompts).
+# qualité de recherche et l'abstention. La génération (A/B des prompts) n'est évaluée que sur demande,
+# avec une clé LLM en secret, car le quota gratuit de Gemini est limité à 20 requêtes par jour.
 on:
   workflow_dispatch:
+    inputs:
+      llm:
+        description: "Évaluer aussi la génération (consomme environ 16 requêtes Gemini)"
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ["eval/questions.jsonl", "src/**", "prompts/**", "data/bofip_subset.jsonl.gz"]
@@ -18,9 +24,11 @@ concurrency:
 jobs:
   eval:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 40
     env:
-      RAG_LLM_PROVIDER: ${{ secrets.RAG_LLM_API_KEY && 'gemini' || 'none' }}
+      PYTHONUNBUFFERED: "1"
+      RAG_QDRANT_PATH: .qdrant_eval
+      RAG_LLM_PROVIDER: ${{ (inputs.llm && secrets.RAG_LLM_API_KEY) && 'gemini' || 'none' }}
       RAG_LLM_API_KEY: ${{ secrets.RAG_LLM_API_KEY }}
       # Modèle distinct de celui de Mail Track AI : chaque modèle a son propre quota gratuit.
       RAG_LLM_MODEL: gemini-2.5-flash
@@ -29,10 +37,16 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt -r requirements-ml.txt
-      - uses: actions/cache@v4
+      - name: Cache des modèles
+        uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
           key: hf-e5-small-mmarco-v1
+      - name: Cache de l'index (reconstruit seulement si le corpus ou le découpage change)
+        uses: actions/cache@v4
+        with:
+          path: .qdrant_eval
+          key: index-${{ hashFiles('data/bofip_subset.jsonl.gz', 'src/rag_fiscal/ingest/**', 'src/rag_fiscal/index/**') }}
       - name: Évaluer
         run: |
           if [ "$RAG_LLM_PROVIDER" = "gemini" ]; then python eval/run_eval.py --llm; else python eval/run_eval.py; fi

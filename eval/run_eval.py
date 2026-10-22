@@ -24,6 +24,11 @@ from rag_fiscal.index.store import SearchFilters  # noqa: E402
 from rag_fiscal.pipeline import RAGPipeline  # noqa: E402
 
 CONFIGS = [("dense", False), ("sparse", False), ("hybrid", False), ("hybrid", True)]
+T0 = time.perf_counter()
+
+
+def log(msg: str) -> None:
+    print(f"[{time.perf_counter() - T0:6.0f} s] {msg}", flush=True)
 
 
 def load_questions(path: Path) -> list[dict]:
@@ -141,7 +146,8 @@ def main() -> None:
     settings = Settings()
     if not args.llm:
         settings = settings.model_copy(update={"llm_provider": "none"})
-    rag = RAGPipeline.from_settings(settings)
+    log("chargement des modèles et de l'index")
+    rag = RAGPipeline.from_settings(settings, log=log)
     questions = load_questions(Path(args.questions))
     in_scope = [q for q in questions if q.get("expected")]
     out_scope = [q for q in questions if not q.get("expected")]
@@ -152,10 +158,16 @@ def main() -> None:
             settings.collection, limit=100000, with_payload=["doc_id"])[0]}),
                    "chunks": rag.store.client.count(settings.collection).count},
         "questions": {"in_scope": len(in_scope), "out_of_scope": len(out_scope)},
-        "retrieval": {f"{m}{' + rerank' if r else ''}": retrieval_metrics(rag, in_scope, m, r) for m, r in CONFIGS},
-        "abstention": abstention_metrics(rag, in_scope, out_scope, settings.abstain_threshold),
     }
+    results["retrieval"] = {}
+    for m, r in CONFIGS:
+        name = f"{m}{' + rerank' if r else ''}"
+        log(f"recherche : {name}")
+        results["retrieval"][name] = retrieval_metrics(rag, in_scope, m, r)
+    log("abstention")
+    results["abstention"] = abstention_metrics(rag, in_scope, out_scope, settings.abstain_threshold)
     if args.llm and rag.llm is not None:
+        log("génération (A/B des prompts)")
         results["generation"] = generation_metrics(rag, in_scope, out_scope, args.llm_sample)
     Path(args.out).write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     write_report(results, Path(args.report))

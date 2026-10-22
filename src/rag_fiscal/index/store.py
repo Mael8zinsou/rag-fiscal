@@ -69,7 +69,7 @@ class VectorStore:
             except Exception:  # noqa: BLE001 - le mode embarqué ignore les index de payload
                 pass
 
-    def index(self, chunks: Iterable[Chunk], batch_size: int = 64) -> int:
+    def index(self, chunks: Iterable[Chunk], batch_size: int = 64, log=None) -> int:
         chunks = list(chunks)
         self.sparse.fit([c.text for c in chunks])
         total = 0
@@ -86,6 +86,8 @@ class VectorStore:
                 ))
             self.client.upsert(self.collection, points)
             total += len(points)
+            if log and (total % 2048 < batch_size or total == len(chunks)):
+                log(f"indexation : {total}/{len(chunks)} passages")
         return total
 
     def search(self, query: str, mode: str = "hybrid", limit: int = 30,

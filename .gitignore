@@ -5,3 +5,4 @@ __pycache__/
 .env
 qdrant_storage/
 .venv/
+.qdrant_eval/

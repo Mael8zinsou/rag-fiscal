@@ -51,14 +51,16 @@ class RAGPipeline:
         self.store, self.reranker, self.llm, self.settings = store, reranker, llm, settings
 
     @classmethod
-    def from_settings(cls, settings: Settings, build_index: bool = True) -> RAGPipeline:
+    def from_settings(cls, settings: Settings, build_index: bool = True, log=None) -> RAGPipeline:
         dense = make_dense_encoder(settings.embedding_backend, settings.embedding_model)
         store = VectorStore(make_client(settings.qdrant_url, settings.qdrant_path), settings.collection, dense, SparseEncoder())
         if build_index and (not store.client.collection_exists(settings.collection)
                             or store.client.count(settings.collection).count == 0):
             store.recreate()
             store.index(chunk_corpus(load_corpus(settings.corpus_path), settings.chunk_max_chars,
-                                     settings.chunk_overlap_paragraphs))
+                                     settings.chunk_overlap_paragraphs), log=log)
+        elif log:
+            log(f"index existant réutilisé : {store.client.count(settings.collection).count} passages")
         reranker = make_reranker(settings.reranker_backend, settings.reranker_model)
         llm = make_llm(settings.llm_provider, settings.llm_model, settings.llm_api_key, settings.llm_base_url,
                        settings.llm_timeout_s)
