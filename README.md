@@ -21,20 +21,20 @@ régénérés automatiquement par la CI à chaque changement du code, des prompt
 
 ```mermaid
 flowchart LR
-    A[data.gouv.fr<br/>BOFiP en vigueur] -->|GitHub Actions| B[Corpus normalisé<br/>séries RPPM, PAT (IFI), ENR, RFPI]
-    B --> C[Découpage par paragraphes<br/>numérotés + titre]
-    C --> D[Vecteur dense<br/>multilingual-e5]
-    C --> E[Vecteur creux<br/>BM25, IDF Qdrant]
-    D & E --> F[(Qdrant)]
-    Q[Question] --> G[Recherche hybride<br/>fusion RRF + filtres]
+    A["data.gouv.fr<br/>BOFiP en vigueur"] -->|GitHub Actions| B["Corpus normalisé<br/>séries RPPM, PAT (IFI), ENR, RFPI"]
+    B --> C["Découpage par paragraphes<br/>numérotés + titre"]
+    C --> D["Vecteur dense<br/>multilingual-e5"]
+    C --> E["Vecteur creux<br/>BM25, IDF Qdrant"]
+    D & E --> F[("Qdrant")]
+    Q["Question"] --> G["Recherche hybride<br/>fusion RRF + filtres"]
     F --> G
-    G --> H[Reranking<br/>cross-encoder]
-    H --> I{Score suffisant ?}
-    I -- non --> X[Abstention]
-    I -- oui --> J[LLM + prompt versionné<br/>A/B déterministe]
-    J --> K{Citations valides ?}
-    K -- oui --> R[Réponse citée]
-    K -- non --> M[Mode dégradé :<br/>passages cités]
+    G --> H["Reranking<br/>cross-encoder"]
+    H --> I{"Score suffisant ?"}
+    I -- non --> X["Abstention"]
+    I -- oui --> J["LLM + prompt versionné<br/>A/B déterministe"]
+    J --> K{"Citations valides ?"}
+    K -- oui --> R["Réponse citée"]
+    K -- non --> M["Mode dégradé :<br/>passages cités"]
 ```
 
 | Étape | Choix | Pourquoi |
