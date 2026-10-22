@@ -7,14 +7,14 @@ Modèles : `intfloat/multilingual-e5-small` (embeddings), `cross-encoder/mmarco-
 
 | Configuration | Hit@1 | Hit@5 | MRR@10 | Latence médiane |
 |---|---|---|---|---|
-| dense | 38% | 83% | 0.58 | 227 ms |
-| sparse | 54% | 96% | 0.68 | 420 ms |
-| hybrid | 46% | 92% | 0.64 | 833 ms |
-| hybrid + rerank | 71% | 92% | 0.79 | 3355 ms |
+| dense | 38% | 83% | 0.58 | 174 ms |
+| sparse | 54% | 96% | 0.68 | 428 ms |
+| hybrid | 46% | 92% | 0.64 | 732 ms |
+| hybrid + rerank | 71% | 92% | 0.79 | 2898 ms |
 
 ## Abstention (seuil sur le score de reranking)
 
-- Seuil : 0.35 (seuil qui équilibre le mieux les deux erreurs sur ce jeu : 0.634, exactitude équilibrée 96%)
+- Seuil : 0.6 (seuil qui équilibre le mieux les deux erreurs sur ce jeu : 0.634, exactitude équilibrée 96%)
 - Questions du périmètre où le système s'abstient à tort : 8%
-- Questions hors périmètre où il s'abstient, comme attendu : 75%
+- Questions hors périmètre où il s'abstient, comme attendu : 100%
 - Score médian du meilleur passage : 0.98 dans le périmètre, 0.02 hors périmètre

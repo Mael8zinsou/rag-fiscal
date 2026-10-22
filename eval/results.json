@@ -12,7 +12,7 @@
     "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
     "prefetch_k": "30",
     "top_k": "5",
-    "abstain_threshold": "0.35",
+    "abstain_threshold": "0.6",
     "llm_provider": "none",
     "llm_model": "gemini-2.5-flash",
     "llm_base_url": "https://api.openai.com/v1",
@@ -33,34 +33,34 @@
       "hit@1": 0.375,
       "hit@5": 0.8333333333333334,
       "mrr@10": 0.5847222222222223,
-      "latency_ms_p50": 226.8952365000132
+      "latency_ms_p50": 174.46171900000707
     },
     "sparse": {
       "hit@1": 0.5416666666666666,
       "hit@5": 0.9583333333333334,
       "mrr@10": 0.6777777777777778,
-      "latency_ms_p50": 419.79405549989224
+      "latency_ms_p50": 428.146237500016
     },
     "hybrid": {
       "hit@1": 0.4583333333333333,
       "hit@5": 0.9166666666666666,
       "mrr@10": 0.6416666666666667,
-      "latency_ms_p50": 832.5787654998749
+      "latency_ms_p50": 731.6416924999913
     },
     "hybrid + rerank": {
       "hit@1": 0.7083333333333334,
       "hit@5": 0.9166666666666666,
       "mrr@10": 0.7930555555555555,
-      "latency_ms_p50": 3355.308792500068
+      "latency_ms_p50": 2898.303300500004
     }
   },
   "abstention": {
-    "threshold": 0.35,
+    "threshold": 0.6,
     "suggested_threshold": 0.634,
     "suggested_balanced_accuracy": 0.9583333333333333,
     "false_abstention_rate": 0.08333333333333333,
-    "correct_abstention_rate": 0.75,
-    "in_scope_top_score_median": 0.9790198587082857,
-    "out_scope_top_score_median": 0.024156571203560552
+    "correct_abstention_rate": 1,
+    "in_scope_top_score_median": 0.9790198150870157,
+    "out_scope_top_score_median": 0.02415658242970138
   }
 }
